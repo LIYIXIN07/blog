@@ -1,0 +1,83 @@
+server:
+  port: 8080  # 如果宝塔Java项目设置的端口也是8080，这里就不用改
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: blog-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:prod}
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 服务器默认 3306 / root；本地 Docker 请用 SPRING_PROFILES_ACTIVE=local
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:blog}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:blog}
+    password: ${DB_PASSWORD:liyixin2003}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 30m
+      cache-null-values: false
+      key-prefix: "blog:"
+      use-key-prefix: true
+
+blog:
+  site-url: ${BLOG_SITE_URL:http://121.4.27.29}
+  upload:
+    dir: uploads
+    url-prefix: /upload
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:blog-secret-key-2024-very-long-secret-key-for-jwt-token-generation}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.blog: DEBUG
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

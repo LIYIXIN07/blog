@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+# 请将 Sitemap 改为你的站点域名，或在 Nginx 中代理 /sitemap.xml 到后端 /api/sitemap.xml
+Sitemap: http://121.4.27.29/api/sitemap.xml

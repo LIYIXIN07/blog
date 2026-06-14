@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DollMeowOnly">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6e40aa"/>
+      <stop offset="0.45" stop-color="#e4419d"/>
+      <stop offset="1" stop-color="#35abd8"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="16" y1="8" x2="40" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <ellipse cx="24" cy="18" rx="14" ry="10" fill="url(#shine)"/>
+  <!-- ears -->
+  <path fill="#fff" d="M18 22 L12 8 L26 16 Z"/>
+  <path fill="#fff" d="M46 22 L52 8 L38 16 Z"/>
+  <!-- head -->
+  <circle cx="32" cy="34" r="18" fill="#fff"/>
+  <!-- eyes -->
+  <ellipse cx="25" cy="32" rx="3.2" ry="4" fill="#4a2d7a"/>
+  <ellipse cx="39" cy="32" rx="3.2" ry="4" fill="#4a2d7a"/>
+  <circle cx="26" cy="31" r="1" fill="#fff" opacity="0.9"/>
+  <circle cx="40" cy="31" r="1" fill="#fff" opacity="0.9"/>
+  <!-- nose & mouth -->
+  <path fill="#e4419d" d="M32 36 L29.5 39.5 Q32 41 34.5 39.5 Z"/>
+  <path fill="none" stroke="#e4419d" stroke-width="1.6" stroke-linecap="round" d="M32 40 Q28 43 25 41 M32 40 Q36 43 39 41"/>
+  <!-- whiskers -->
+  <path fill="none" stroke="#d8c8f0" stroke-width="1.2" stroke-linecap="round" d="M14 34 H22 M14 38 H21 M42 34 H50 M43 38 H50"/>
+</svg>
