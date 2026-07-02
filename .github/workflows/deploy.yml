@@ -1,10 +1,21 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy to production server after build
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: blog-ci-cd-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   SERVER_IP: '121.4.27.29'
@@ -124,11 +135,21 @@ jobs:
           retention-days: 7
 
   deploy:
-    name: Deploy to Baota server
+    name: CD - Deploy to Baota server
     needs: [backend-build, frontend-build, admin-build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: |
+      needs.backend-build.result == 'success' &&
+      needs.frontend-build.result == 'success' &&
+      needs.admin-build.result == 'success' &&
+      (
+        (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
+        (github.event_name == 'workflow_dispatch' && inputs.deploy)
+      )
     runs-on: ubuntu-latest
+    environment: production
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download backend artifact
         uses: actions/download-artifact@v4
         with:
@@ -157,6 +178,7 @@ jobs:
           target: ${{ env.REMOTE_FRONTEND_DIR }}
           strip_components: 2
           overwrite: true
+          rm: true
 
       - name: Upload admin frontend to /home/blogadmin
         uses: appleboy/scp-action@v0.1.7
@@ -168,6 +190,7 @@ jobs:
           target: ${{ env.REMOTE_ADMIN_DIR }}
           strip_components: 2
           overwrite: true
+          rm: true
 
       - name: Upload backend jar to /home
         uses: appleboy/scp-action@v0.1.7
@@ -180,6 +203,16 @@ jobs:
           strip_components: 2
           overwrite: true
 
+      - name: Upload restart script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SH_PRIVATE_KEY }}
+          source: 'scripts/restart-backend.sh'
+          target: ${{ env.REMOTE_HOME }}
+          overwrite: true
+
       - name: Restart backend service
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -187,11 +220,5 @@ jobs:
           username: ${{ env.SSH_USER }}
           key: ${{ secrets.SH_PRIVATE_KEY }}
           script: |
-            cd ${{ env.REMOTE_HOME }}
-            if [ -f ./restart-backend.sh ]; then
-              bash ./restart-backend.sh
-            elif [ -f ./restart.sh ]; then
-              bash ./restart.sh
-            else
-              echo "文件已上传完成。请在宝塔面板中重启 Java 项目（${{ env.REMOTE_BACKEND_JAR }}）。"
-            fi
+            chmod +x ${{ env.REMOTE_HOME }}/restart-backend.sh
+            bash ${{ env.REMOTE_HOME }}/restart-backend.sh
