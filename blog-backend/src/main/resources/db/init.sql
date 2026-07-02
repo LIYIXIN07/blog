@@ -272,6 +272,7 @@ INSERT INTO tag (name, color, created_at) VALUES
 ON DUPLICATE KEY UPDATE color = VALUES(color);
 
 -- 插入默认系统设置
-INSERT INTO settings (id, site_name, site_description, author_name, author_avatar, author_bio, github, telegram, twitter, gitee, created_at) VALUES
+INSERT INTO settings (id, site_name, site_description, author_name, author_avatar, author_bio, github, telegram, twitter, gitee, icp, created_at) VALUES
 (1, '个人博客', '记录技术成长，分享学习心得', 'DollMeowOnly', '/images/author-avatar.png', '热爱技术，乐于分享',
- 'https://github.com/telF4', 'https://t.me/ghxjsksnhdjjdj', 'https://x.com/jien386618', 'https://gitee.com/DollMeowOnly', NOW());
+ 'https://github.com/telF4', 'https://t.me/ghxjsksnhdjjdj', 'https://x.com/jien386618', 'https://gitee.com/DollMeowOnly',
+ '赣ICP备2026013392号-1', NOW());

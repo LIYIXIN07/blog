@@ -94,9 +94,9 @@
 
         <router-link to="/">{{ copyright?.siteName || siteName }}</router-link>
 
-        <span v-if="icp">|</span>
+        <span v-if="displayIcp">|</span>
 
-        <a v-if="icp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">{{ icp }}</a>
+        <a v-if="displayIcp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">{{ displayIcp }}</a>
 
       </p>
 
@@ -142,6 +142,7 @@ import type { ArticleListItem } from '@/types'
 
 const settingsStore = useSettingsStore()
 
+const DEFAULT_ICP = '赣ICP备2026013392号-1'
 const siteName = ref('Blog')
 
 const authorAvatar = ref('')
@@ -213,6 +214,10 @@ const badges = computed(() => [
   { subject: 'Articles', value: String(siteStats.totalArticles), color: 'pink' }
 
 ])
+
+
+
+const displayIcp = computed(() => icp.value || DEFAULT_ICP)
 
 
 

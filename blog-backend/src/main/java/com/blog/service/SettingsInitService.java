@@ -1,5 +1,6 @@
 package com.blog.service;
 
+import com.blog.constant.SiteSettingConstants;
 import com.blog.entity.Settings;
 import com.blog.repository.SettingsRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,10 @@ public class SettingsInitService {
     public static final String DEFAULT_TELEGRAM = "https://t.me/ghxjsksnhdjjdj";
     public static final String DEFAULT_TWITTER = "https://x.com/jien386618";
     public static final String DEFAULT_GITEE = "https://gitee.com/DollMeowOnly";
+    public static final String DEFAULT_ICP = "赣ICP备2026013392号-1";
 
     private final SettingsRepository settingsRepository;
+    private final com.blog.repository.SiteSettingRepository siteSettingRepository;
 
     @Transactional
     public void ensureDefaultSettings() {
@@ -60,11 +63,33 @@ public class SettingsInitService {
             settings.setAuthorName("DollMeowOnly");
             updated = true;
         }
+        if (isBlank(settings.getIcp())) {
+            settings.setIcp(DEFAULT_ICP);
+            updated = true;
+        }
 
         settingsRepository.save(settings);
+        if (ensureSiteBeianSetting()) {
+            updated = true;
+        }
         if (updated) {
             log.info("站点设置默认博主信息已写入");
         }
+    }
+
+    private boolean ensureSiteBeianSetting() {
+        return siteSettingRepository.findAllByOrderByIdAsc().stream()
+                .filter(item -> SiteSettingConstants.BEIAN.equals(item.getNameEn()))
+                .findFirst()
+                .map(item -> {
+                    if (!isBlank(item.getValue())) {
+                        return false;
+                    }
+                    item.setValue(DEFAULT_ICP);
+                    siteSettingRepository.save(item);
+                    return true;
+                })
+                .orElse(false);
     }
 
     private boolean isBlank(String value) {

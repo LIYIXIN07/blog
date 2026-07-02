@@ -35,6 +35,14 @@
               :rows="3"
             />
           </el-form-item>
+
+          <el-form-item label="ICP备案号">
+            <el-input
+              v-model="settings.icp"
+              placeholder="例如：赣ICP备2026013392号-1"
+              size="large"
+            />
+          </el-form-item>
         </el-form>
       </div>
       
@@ -186,6 +194,7 @@ const settings = reactive({
   authorBio: '',
   email: '',
   github: '',
+  icp: '',
   links: [] as FriendLink[]
 })
 
@@ -207,6 +216,7 @@ const fetchSettings = async () => {
       settings.authorBio = data.authorBio || ''
       settings.email = data.email || ''
       settings.github = data.github || ''
+      settings.icp = data.icp || ''
     }
   } catch (error) {
     console.error('获取设置失败:', error)

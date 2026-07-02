@@ -27,6 +27,7 @@ public class SettingsService {
                     defaultSettings.setSiteDescription("记录技术成长，分享学习心得");
                     defaultSettings.setAuthorName("DollMeowOnly");
                     defaultSettings.setAuthorBio("热爱技术，乐于分享");
+                    defaultSettings.setIcp(SettingsInitService.DEFAULT_ICP);
                     return settingsRepository.save(defaultSettings);
                 });
     }

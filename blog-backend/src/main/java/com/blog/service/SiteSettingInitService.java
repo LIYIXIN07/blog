@@ -41,7 +41,8 @@ public class SiteSettingInitService {
                 ? settings.getGitee() : SettingsInitService.DEFAULT_GITEE;
         String email = settings != null && settings.getEmail() != null
                 ? settings.getEmail() : "";
-        String icp = settings != null && settings.getIcp() != null ? settings.getIcp() : "";
+        String icp = settings != null && settings.getIcp() != null && !settings.getIcp().isBlank()
+                ? settings.getIcp() : SettingsInitService.DEFAULT_ICP;
         String bio = settings != null && settings.getAuthorBio() != null
                 ? settings.getAuthorBio() : "热爱技术，乐于分享";
 
