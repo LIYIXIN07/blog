@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main, master]
 
+env:
+  SERVER_IP: '121.4.27.29'
+  SSH_USER: 'root'
+  REMOTE_HOME: '/home'
+  REMOTE_FRONTEND_DIR: '/home/blogfront'
+  REMOTE_ADMIN_DIR: '/home/blogadmin'
+  REMOTE_BACKEND_JAR: '/home/blog-backend-1.0.0.jar'
+  VITE_API_BASE_URL: 'http://121.4.27.29:8080/api'
+  VITE_SITE_URL: 'http://121.4.27.29'
+
 jobs:
   backend-test:
     runs-on: ubuntu-latest
@@ -24,9 +34,6 @@ jobs:
 
   frontend-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,9 +44,154 @@ jobs:
         run: npm ci
       - name: Unit tests
         run: npm run test
+      - name: Type check and build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ env.VITE_API_BASE_URL }}
+          VITE_SITE_URL: ${{ env.VITE_SITE_URL }}
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
       - name: E2E tests
         run: npm run test:e2e
         env:
           CI: true
+
+  backend-build:
+    needs: backend-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blog-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Build backend jar
+        run: mvn -B -DskipTests package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blog-backend-jar
+          path: blog-backend/target/blog-backend-*.jar
+          retention-days: 7
+
+  frontend-build:
+    needs: frontend-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build blog frontend
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ env.VITE_API_BASE_URL }}
+          VITE_SITE_URL: ${{ env.VITE_SITE_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blog-frontend-dist
+          path: dist
+          retention-days: 7
+
+  admin-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blog-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: blog-admin/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build admin frontend
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ env.VITE_API_BASE_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blog-admin-dist
+          path: blog-admin/dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Baota server
+    needs: [backend-build, frontend-build, admin-build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download backend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-backend-jar
+          path: artifacts/backend
+
+      - name: Download blog frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-frontend-dist
+          path: artifacts/blogfront
+
+      - name: Download admin frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-admin-dist
+          path: artifacts/blogadmin
+
+      - name: Upload blog frontend to /home/blogfront
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SH_PRIVATE_KEY }}
+          source: 'artifacts/blogfront/*'
+          target: ${{ env.REMOTE_FRONTEND_DIR }}
+          strip_components: 2
+          overwrite: true
+
+      - name: Upload admin frontend to /home/blogadmin
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SH_PRIVATE_KEY }}
+          source: 'artifacts/blogadmin/*'
+          target: ${{ env.REMOTE_ADMIN_DIR }}
+          strip_components: 2
+          overwrite: true
+
+      - name: Upload backend jar to /home
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SH_PRIVATE_KEY }}
+          source: 'artifacts/backend/blog-backend-*.jar'
+          target: ${{ env.REMOTE_HOME }}
+          strip_components: 2
+          overwrite: true
+
+      - name: Restart backend service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SH_PRIVATE_KEY }}
+          script: |
+            cd ${{ env.REMOTE_HOME }}
+            if [ -f ./restart-backend.sh ]; then
+              bash ./restart-backend.sh
+            elif [ -f ./restart.sh ]; then
+              bash ./restart.sh
+            else
+              echo "文件已上传完成。请在宝塔面板中重启 Java 项目（${{ env.REMOTE_BACKEND_JAR }}）。"
+            fi
